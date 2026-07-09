@@ -1,0 +1,17 @@
+{
+  "columns": {
+    "mmsi": "MMSI",
+    "ts": "time",
+    "lat": "latitude",
+    "lon": "longitude",
+    "sog": "speed",
+    "cog": "course",
+    "heading": "hdg",
+    "name": "shipname",
+    "vessel_class": "shiptype"
+  },
+  "ts_format": null,
+  "ts_unit": null,
+  "sog_unit": "knots",
+  "vessel_class_is_ais_code": true
+}
