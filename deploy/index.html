@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+<style>
+html,body{margin:0;padding:0;background:#060a14;color:#e8f0ff;font-family:'IBM Plex Sans',sans-serif;overflow:hidden}
+*{box-sizing:border-box}
+a{color:#35c4f0;text-decoration:none}
+a:hover{color:#8fdcf7}
+input,select,button{font-family:inherit}
+input[type=range]{accent-color:#2f8bff}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:#1c2c4a;border-radius:4px}
+.leaflet-container{background:#04070f;font-family:'IBM Plex Sans',sans-serif}
+.leaflet-control-attribution{background:rgba(6,10,20,.7)!important;color:#5a6b8c!important;font-size:9px!important}
+.leaflet-control-attribution a{color:#7a8db0!important}
+.leaflet-tooltip.mra-port{background:rgba(10,17,32,.9);border:1px solid #1c2c4a;color:#cfe0ff;font-size:11px;font-weight:600;border-radius:6px;padding:2px 8px;box-shadow:none}
+.leaflet-tooltip.mra-port:before{display:none}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes slideL{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+@keyframes popIn{from{opacity:0;transform:translate(-50%,-104%) scale(.96)}to{opacity:1;transform:translate(-50%,-108%) scale(1)}}
+@keyframes pulse{0%,100%{opacity:.45}50%{opacity:1}}
+@keyframes sbIn{from{transform:translateX(-105%)}to{transform:none}}
+@keyframes sbOut{from{transform:none}to{transform:translateX(-105%)}}
+@media (max-width:960px){
+[data-sidebar]{position:fixed;left:0;top:64px;bottom:0;z-index:1400;transform:translateX(-105%);box-shadow:20px 0 50px rgba(0,0,0,.55)}
+[data-sidebar][data-open="true"]{transform:none}
+[data-kpis]{overflow-x:auto;scrollbar-width:none}
+[data-topdate]{display:none}
+[data-drawer]{left:0 !important;right:0 !important;width:auto !important}
+[data-zonespanel]{display:none}
+[data-threed]{left:0 !important;right:0 !important;bottom:0 !important;width:auto !important;border-radius:14px 14px 0 0 !important}
+[data-legend]{display:none}
+}
+@media (min-width:961px){
+[data-sidebar][data-hidden="true"]{display:none}
+}
+</style>
+</helmet>
+<div style="height:100vh;display:flex;flex-direction:column;background:#060a14;color:#e8f0ff;font-size:14px" data-screen-label="Maritime Risk Atlas">
+
+  <!-- ============ TOP BAR ============ -->
+  <header style="height:64px;flex:none;display:flex;align-items:center;gap:14px;padding:0 14px 0 12px;background:#080e1c;border-bottom:1px solid #16233c;z-index:1500;position:relative">
+    <div style="display:flex;align-items:center;gap:10px;min-width:150px">
+      <div style="width:34px;height:34px;border-radius:9px;background:#101c33;border:1px solid #1c2c4a;display:flex;align-items:center;justify-content:center">
+        <svg width="18" height="18" viewBox="0 0 18 18"><rect x="6" y="3" width="6" height="5" fill="#e8f0ff"></rect><path d="M2 9 L16 9 L13 14 L5 14 Z" fill="#2f8bff"></path></svg>
+      </div>
+      <div style="line-height:1.15">
+        <div style="font-weight:700;font-size:14px;letter-spacing:.2px">Maritime Risk</div>
+        <div style="font-weight:700;font-size:14px;color:#2f8bff">Atlas</div>
+      </div>
+    </div>
+    <div data-kpis="" style="flex:1;display:flex;gap:10px;min-width:0">
+      <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+        <div style="flex:1;min-width:170px;display:flex;align-items:center;gap:10px;background:#0b1425;border:1px solid #16233c;border-radius:10px;padding:8px 12px">
+          <div style="width:32px;height:32px;flex:none;border-radius:8px;display:flex;align-items:center;justify-content:center;background:{{ k.tintBg }}">
+            <div style="width:11px;height:11px;transform:rotate(45deg);border-radius:2px;background:{{ k.tint }}"></div>
+          </div>
+          <div style="min-width:0;line-height:1.2">
+            <div style="font-size:10.5px;color:#8296b8;white-space:nowrap">{{ k.label }}</div>
+            <div style="display:flex;align-items:baseline;gap:7px;white-space:nowrap">
+              <span style="font-size:17px;font-weight:700;font-family:'IBM Plex Mono',monospace">{{ k.value }}</span>
+              <span style="font-size:10.5px;font-weight:600;color:{{ k.deltaColor }}">{{ k.delta }}</span>
+            </div>
+            <div style="font-size:9.5px;color:#5a6b8c;white-space:nowrap">vs last 7 days</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <div data-topdate="" style="flex:none;text-align:right;background:#0b1425;border:1px solid #16233c;border-radius:10px;padding:7px 14px;line-height:1.25">
+      <div style="font-weight:700;font-size:14px">{{ dateLabel }}</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8296b8">{{ clock }}</div>
+    </div>
+  </header>
+
+  <div style="flex:1;display:flex;min-height:0;position:relative">
+
+    <!-- ============ ICON RAIL ============ -->
+    <nav style="width:52px;flex:none;background:#080e1c;border-right:1px solid #16233c;display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:6px;z-index:1450">
+      <button onClick="{{ toggleSidebar }}" title="Toggle filters" style="width:36px;height:36px;border-radius:8px;border:1px solid transparent;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px" style-hover="background:#101c33">
+        <div style="width:16px;height:2px;background:#cfe0ff;border-radius:1px"></div>
+        <div style="width:16px;height:2px;background:#cfe0ff;border-radius:1px"></div>
+        <div style="width:16px;height:2px;background:#cfe0ff;border-radius:1px"></div>
+      </button>
+      <div style="height:6px"></div>
+      <button title="Map view" style="width:36px;height:36px;border-radius:8px;border:1px solid #24427a;background:#12233f;cursor:pointer;display:flex;align-items:center;justify-content:center">
+        <div style="width:13px;height:13px;border:2px solid #2f8bff;border-radius:3px;transform:rotate(45deg)"></div>
+      </button>
+      <button onClick="{{ openDrawerList }}" title="Risk zones" style="width:36px;height:36px;border-radius:8px;border:1px solid transparent;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:#101c33">
+        <div style="width:13px;height:13px;border:2px dashed #8296b8;border-radius:50%"></div>
+      </button>
+      <button onClick="{{ openSettings }}" title="Settings" style="width:36px;height:36px;border-radius:8px;border:1px solid transparent;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:auto" style-hover="background:#101c33">
+        <div style="width:14px;height:14px;border:2px solid #8296b8;border-radius:50%;display:flex;align-items:center;justify-content:center"><div style="width:4px;height:4px;border-radius:50%;background:#8296b8"></div></div>
+      </button>
+      <a href="design-system.html" title="Design system" style="width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center" style-hover="background:#101c33">
+        <div style="display:grid;grid-template-columns:6px 6px;gap:2px"><div style="height:6px;background:#8296b8;border-radius:1px"></div><div style="height:6px;background:#8296b8;border-radius:1px"></div><div style="height:6px;background:#8296b8;border-radius:1px"></div><div style="height:6px;background:#8296b8;border-radius:1px"></div></div>
+      </a>
+    </nav>
+
+    <!-- ============ SIDEBAR ============ -->
+    <aside data-sidebar="" ref="{{ asideRef }}" data-open="{{ sidebarOpen }}" data-hidden="{{ sidebarHidden }}" style="width:248px;flex:none;background:#0a1120;border-right:1px solid #16233c;overflow-y:auto;padding:16px 16px 24px">
+      <div style="position:relative;margin-bottom:16px;z-index:60">
+        <input type="text" placeholder="Search port, country, or vessel (MMSI/Name)" value="{{ searchQ }}" onChange="{{ onSearchQ }}" style="width:100%;background:#0c1526;border:1px solid #24427a;color:#cfe0ff;border-radius:8px;padding:9px 10px;font-size:11.5px" style-focus="border-color:#2f8bff;outline:none">
+        <sc-if value="{{ searchResultsOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;top:100%;left:0;right:0;margin-top:4px;background:#0c1526;border:1px solid #24427a;border-radius:8px;max-height:280px;overflow-y:auto;box-shadow:0 16px 44px rgba(0,0,0,.6)">
+            <sc-for list="{{ searchGroups }}" as="grp" hint-placeholder-count="1">
+              <div>
+                <div style="padding:7px 11px 4px;font-size:9.5px;font-weight:700;letter-spacing:1.1px;color:#2f8bff">{{ grp.label }}</div>
+                <sc-for list="{{ grp.items }}" as="r" hint-placeholder-count="2">
+                  <div onClick="{{ r.go }}" style="display:flex;align-items:center;gap:8px;padding:7px 11px;font-size:12px;cursor:pointer;color:#cfe0ff" style-hover="background:#152238">
+                    <span style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</span>
+                    <span style="margin-left:auto;flex:none;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5a6b8c">{{ r.sub }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-for>
+            <sc-if value="{{ searchEmpty }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:10px 11px;font-size:11px;color:#5a6b8c">No matches</div>
+            </sc-if>
+          </div>
+        </sc-if>
+      </div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:1.2px;color:#2f8bff;margin-bottom:12px">FILTERS</div>
+
+      <label style="display:block;font-size:11.5px;color:#8296b8;margin-bottom:6px">Date Range</label>
+      <div style="display:flex;gap:6px;margin-bottom:14px">
+        <input type="date" value="{{ dateStart }}" onChange="{{ onDateStart }}" style="flex:1;min-width:0;background:#0c1526;border:1px solid #1c2c4a;color:#cfe0ff;border-radius:8px;padding:7px 8px;font-size:11px;font-family:'IBM Plex Mono',monospace;color-scheme:dark">
+        <input type="date" value="{{ dateEnd }}" onChange="{{ onDateEnd }}" style="flex:1;min-width:0;background:#0c1526;border:1px solid #1c2c4a;color:#cfe0ff;border-radius:8px;padding:7px 8px;font-size:11px;font-family:'IBM Plex Mono',monospace;color-scheme:dark">
+      </div>
+
+      <label style="display:block;font-size:11.5px;color:#8296b8;margin-bottom:4px">Time Range (UTC)</label>
+      <input type="range" min="0" max="23.75" step="0.25" value="{{ hour }}" onChange="{{ onHour }}" style="width:100%;margin:2px 0 2px">
+      <div style="display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5a6b8c;margin-bottom:14px"><span>00:00</span><span>23:59</span></div>
+
+      <label style="display:block;font-size:11.5px;color:#8296b8;margin-bottom:6px">Vessel Type</label>
+      <select value="{{ vesselType }}" onChange="{{ onVesselType }}" style="width:100%;background:#0c1526;border:1px solid #1c2c4a;color:#cfe0ff;border-radius:8px;padding:8px 10px;font-size:12px;margin-bottom:14px">
+        <option value="all">All Types</option>
+        <option value="Container Ship">Container Ship</option>
+        <option value="Tanker">Tanker</option>
+        <option value="Bulk Carrier">Bulk Carrier</option>
+        <option value="Tug">Tug</option>
+        <option value="Passenger">Passenger</option>
+      </select>
+
+      <label style="display:block;font-size:11.5px;color:#8296b8;margin-bottom:4px">Density Threshold</label>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <input type="range" min="0" max="100" value="{{ density }}" onChange="{{ onDensity }}" style="flex:1">
+        <div style="width:44px;flex:none;text-align:center;background:#0c1526;border:1px solid #1c2c4a;border-radius:6px;padding:4px 0;font-family:'IBM Plex Mono',monospace;font-size:11px">{{ density }}</div>
+        <span style="font-size:10px;color:#5a6b8c">/100</span>
+      </div>
+
+      <label style="display:block;font-size:11.5px;color:#8296b8;margin-bottom:6px">Search Vessel (MMSI / Name)</label>
+      <input type="text" placeholder="Enter MMSI or Vessel Name…" value="{{ search }}" onChange="{{ onSearch }}" style="width:100%;background:#0c1526;border:1px solid #1c2c4a;color:#cfe0ff;border-radius:8px;padding:8px 10px;font-size:11.5px;margin-bottom:18px" style-focus="border-color:#2f8bff;outline:none">
+
+      <div style="font-size:11px;font-weight:700;letter-spacing:1.2px;color:#2f8bff;margin:4px 0 10px">LAYERS</div>
+      <sc-for list="{{ layerList }}" as="ly" hint-placeholder-count="6">
+        <div>
+          <label style="display:flex;align-items:center;gap:9px;padding:5px 0;cursor:pointer;font-size:12.5px;color:#cfe0ff">
+            <input type="checkbox" checked="{{ ly.on }}" onChange="{{ ly.toggle }}" style="width:15px;height:15px;accent-color:#2f8bff">
+            {{ ly.label }}
+          </label>
+          <sc-if value="{{ ly.gradient }}" hint-placeholder-val="{{ false }}">
+            <div style="margin:2px 0 6px 24px">
+              <div style="height:8px;border-radius:4px;background:linear-gradient(90deg,#2438ff,#00d0ff,#4dff5c,#ffe14d,#ff4d2e)"></div>
+              <div style="display:flex;justify-content:space-between;font-size:9.5px;color:#5a6b8c;margin-top:2px"><span>Low</span><span>High</span></div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-for>
+
+      <button onClick="{{ resetFilters }}" style="width:100%;margin-top:16px;background:#182741;border:1px solid #24427a;color:#cfe0ff;border-radius:8px;padding:9px 0;font-size:12px;font-weight:600;cursor:pointer" style-hover="background:#1e3152">⟳ Reset Filters</button>
+    </aside>
+
+    <!-- ============ MAP + TIMELINE COLUMN ============ -->
+    <main style="flex:1;display:flex;flex-direction:column;min-width:0;min-height:0">
+      <div style="flex:1;position:relative;min-height:0">
+        <div ref="{{ mapRef }}" style="position:absolute;inset:0"></div>
+
+        <!-- map controls -->
+        <div style="position:absolute;top:14px;right:14px;z-index:1000;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+          <select value="{{ basemap }}" onChange="{{ onBasemap }}" title="Map type" style="background:#0b1425;border:1px solid #1c2c4a;color:#cfe0ff;border-radius:9px;padding:7px 9px;font-size:11px;font-weight:600;cursor:pointer">
+            <option value="simple">Simple</option>
+            <option value="satellite">Satellite</option>
+            <option value="nautical">Nautical</option>
+          </select>
+          <div style="background:#0b1425;border:1px solid #1c2c4a;border-radius:9px;overflow:hidden;display:flex;flex-direction:column">
+            <button onClick="{{ zoomIn }}" style="width:34px;height:32px;border:none;background:transparent;color:#e8f0ff;font-size:17px;cursor:pointer;line-height:1" style-hover="background:#152238">+</button>
+            <div style="height:1px;background:#1c2c4a"></div>
+            <button onClick="{{ zoomOut }}" style="width:34px;height:32px;border:none;background:transparent;color:#e8f0ff;font-size:19px;cursor:pointer;line-height:1" style-hover="background:#152238">−</button>
+          </div>
+          <button onClick="{{ resetView }}" title="Reset view" style="width:34px;height:34px;background:#0b1425;border:1px solid #1c2c4a;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:#152238">
+            <div style="width:12px;height:12px;border:2px solid #cfe0ff;border-radius:50%;display:flex;align-items:center;justify-content:center"><div style="width:3px;height:3px;border-radius:50%;background:#cfe0ff"></div></div>
+          </button>
+        </div>
+
+        <!-- legend + cursor coordinates -->
+        <div style="position:absolute;left:14px;bottom:14px;z-index:1000;display:flex;flex-direction:column;align-items:flex-start;gap:8px">
+        <div data-legend="" style="background:rgba(10,17,32,.92);border:1px solid #1c2c4a;border-radius:10px;padding:10px 14px;min-width:168px;backdrop-filter:blur(6px)">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1.2px;color:#8296b8;margin-bottom:8px">LEGEND</div>
+          <div style="display:flex;flex-direction:column;gap:6px;font-size:11px;color:#cfe0ff">
+            <div style="display:flex;align-items:center;gap:8px"><div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:9px solid #35e07c"></div>Vessel (Moving)</div>
+            <div style="display:flex;align-items:center;gap:8px"><div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:9px solid #ff4d5e"></div>Vessel (Anchored)</div>
+            <div style="display:flex;align-items:center;gap:8px"><div style="width:14px;border-top:2px dashed #8296b8"></div>Navigation Route</div>
+            <div style="display:flex;align-items:center;gap:8px"><div style="width:9px;height:9px;border-radius:50%;background:#2f8bff;border:2px solid #cfe0ff"></div>Port / Terminal</div>
+            <div style="display:flex;align-items:center;gap:8px"><div style="width:12px;height:10px;border:2px dashed #ff6a3d;border-radius:2px"></div>High Risk Zone</div>
+          </div>
+        </div>
+        <div ref="{{ coordRef }}" style="background:rgba(10,17,32,.92);border:1px solid #1c2c4a;border-radius:8px;padding:5px 12px;backdrop-filter:blur(6px);font-family:'IBM Plex Mono',monospace;font-size:11px;color:#cfe0ff;white-space:nowrap">—° N · —° E</div>
+        </div>
+
+        <!-- high risk zones panel -->
+        <div data-zonespanel="" style="position:absolute;right:14px;bottom:14px;z-index:1000;width:296px;background:rgba(10,17,32,.94);border:1px solid #1c2c4a;border-radius:10px;backdrop-filter:blur(6px);overflow:hidden">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px 8px">
+            <span style="font-size:11px;font-weight:700;letter-spacing:1.1px;color:#2f8bff">HIGH RISK ZONES</span>
+            <button onClick="{{ openDrawerList }}" style="background:none;border:none;color:#35c4f0;font-size:11px;cursor:pointer;padding:0" style-hover="color:#8fdcf7">View All</button>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 16px;padding:0 14px 5px;font-size:9.5px;color:#5a6b8c">
+            <span>Zone ID</span><span style="text-align:right">Vessel Count</span><span style="text-align:right">Risk Score</span><span></span>
+          </div>
+          <sc-for list="{{ zones }}" as="z" hint-placeholder-count="5">
+            <div onClick="{{ z.open }}" style="display:grid;grid-template-columns:1fr 1fr 1fr 16px;align-items:center;padding:6px 14px;font-family:'IBM Plex Mono',monospace;font-size:12px;cursor:pointer;border-top:1px solid #121e34" style-hover="background:#101c33">
+              <span style="color:#cfe0ff">{{ z.id }}</span>
+              <span style="text-align:right;color:#8296b8">{{ z.countFmt }}</span>
+              <span style="text-align:right;font-weight:600">{{ z.score }}</span>
+              <div style="width:8px;height:8px;border-radius:50%;justify-self:end;background:{{ z.color }}"></div>
+            </div>
+          </sc-for>
+        </div>
+
+        <!-- vessel popup -->
+        <sc-if value="{{ popupOpen }}" hint-placeholder-val="{{ false }}">
+          <div data-popup="" ref="{{ popupRef }}" style="position:absolute;z-index:1100;left:{{ popupX }};top:{{ popupY }};transform:translate(-50%,-108%);width:272px;background:#0a1120;border:1px solid #24427a;border-radius:10px;box-shadow:0 18px 50px rgba(0,0,0,.6);animation:popIn .18s ease">
+            <div style="display:flex;align-items:center;justify-content:space-between;background:#12233f;border-radius:9px 9px 0 0;padding:8px 12px">
+              <span style="font-size:12px;font-weight:600;color:#cfe0ff">Vessel Details</span>
+              <button onClick="{{ closePopup }}" style="background:none;border:none;color:#8296b8;font-size:15px;cursor:pointer;padding:0;line-height:1" style-hover="color:#fff">✕</button>
+            </div>
+            <div style="padding:10px 12px;display:flex;flex-direction:column;gap:6px;font-size:11.5px">
+              <div style="display:flex;justify-content:space-between"><span style="color:#8296b8">MMSI</span><span style="font-family:'IBM Plex Mono',monospace">{{ pv.mmsi }}</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="color:#8296b8">Vessel Name</span><span style="font-weight:600">{{ pv.name }}</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="color:#8296b8">Vessel Type</span><span>{{ pv.type }}</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="color:#8296b8">Speed</span><span style="font-family:'IBM Plex Mono',monospace">{{ pv.speed }}</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="color:#8296b8">Course</span><span style="font-family:'IBM Plex Mono',monospace">{{ pv.course }}</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="color:#8296b8">Timestamp</span><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px">{{ pv.ts }}</span></div>
+              <div style="height:56px;border-radius:6px;border:1px solid #1c2c4a;background:repeating-linear-gradient(45deg,#0c1526 0 8px,#101c33 8px 16px);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5a6b8c">vessel photo</div>
+              <div style="display:flex;gap:8px;margin-top:2px">
+                <button onClick="{{ open3D }}" style="flex:1;background:#2f8bff;border:none;color:#fff;border-radius:7px;padding:8px 0;font-size:11px;font-weight:700;letter-spacing:.6px;cursor:pointer" style-hover="background:#4a9dff">3D VIEW</button>
+                <button onClick="{{ trackVessel }}" style="flex:1;background:#182741;border:1px solid #24427a;color:#cfe0ff;border-radius:7px;padding:8px 0;font-size:11px;font-weight:700;letter-spacing:.6px;cursor:pointer" style-hover="background:#1e3152">TRACK</button>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- 3D side-view panel -->
+        <sc-if value="{{ threeOpen }}" hint-placeholder-val="{{ false }}">
+          <div data-threed="" style="position:absolute;right:14px;bottom:14px;z-index:1200;width:520px;background:#0a1120;border:1px solid #24427a;border-radius:12px;box-shadow:0 24px 70px rgba(0,0,0,.65);overflow:hidden;animation:fadeUp .22s ease">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#0d1830;border-bottom:1px solid #16233c">
+              <div style="display:flex;align-items:center;gap:9px">
+                <div style="width:8px;height:8px;border-radius:50%;background:#35e07c;animation:pulse 2s infinite"></div>
+                <span style="font-size:12px;font-weight:700;letter-spacing:.8px">SIDE PROFILE — {{ threeName }}</span>
+              </div>
+              <button onClick="{{ close3D }}" style="background:none;border:none;color:#8296b8;font-size:16px;cursor:pointer;padding:0;line-height:1" style-hover="color:#fff">✕</button>
+            </div>
+            <div ref="{{ threeRef }}" style="height:260px;background:linear-gradient(#060d1c 55%,#07203a 55%);cursor:grab;touch-action:none"></div>
+            <div style="display:flex;gap:10px;padding:10px 14px;border-top:1px solid #16233c;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8296b8">
+              <span>LOA <b style="color:#cfe0ff">{{ threeLoa }}</b></span>
+              <span>BEAM <b style="color:#cfe0ff">{{ threeBeam }}</b></span>
+              <span>DRAFT <b style="color:#cfe0ff">{{ threeDraft }}</b></span>
+              <span style="margin-left:auto;color:#5a6b8c">drag to rotate</span>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+
+      <!-- ============ TIMELINE ============ -->
+      <div style="flex:none;background:#080e1c;border-top:1px solid #16233c;padding:10px 18px 12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="font-size:11px;font-weight:700;letter-spacing:1.2px;color:#2f8bff">TIMELINE</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8296b8">{{ dateLabel }}</span>
+          </div>
+          <select value="{{ speed }}" onChange="{{ onSpeed }}" style="background:#0c1526;border:1px solid #1c2c4a;color:#cfe0ff;border-radius:7px;padding:4px 8px;font-size:11px">
+            <option value="1">1x</option><option value="2">2x</option><option value="4">4x</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <button onClick="{{ togglePlay }}" style="width:34px;height:34px;flex:none;border-radius:50%;border:none;background:#2f8bff;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:#4a9dff">
+            <sc-if value="{{ playing }}" hint-placeholder-val="{{ false }}"><div style="display:flex;gap:3px"><div style="width:3px;height:11px;background:#fff"></div><div style="width:3px;height:11px;background:#fff"></div></div></sc-if>
+            <sc-if value="{{ notPlaying }}" hint-placeholder-val="{{ true }}"><div style="width:0;height:0;border-top:6px solid transparent;border-bottom:6px solid transparent;border-left:10px solid #fff;margin-left:2px"></div></sc-if>
+          </button>
+          <button onClick="{{ stepHour }}" title="Step +1h" style="width:28px;height:28px;flex:none;border-radius:50%;border:1px solid #1c2c4a;background:#0c1526;color:#cfe0ff;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:#152238">
+            <div style="display:flex;align-items:center;gap:1px"><div style="width:0;height:0;border-top:4px solid transparent;border-bottom:4px solid transparent;border-left:6px solid #cfe0ff"></div><div style="width:2px;height:8px;background:#cfe0ff"></div></div>
+          </button>
+          <div style="flex:1;position:relative;padding-top:2px">
+            <input type="range" min="0" max="23.75" step="0.25" value="{{ hour }}" onInput="{{ onHour }}" style="width:100%;display:block">
+            <div style="display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5a6b8c;margin-top:3px">
+              <span>00:00</span><span>03:00</span><span>06:00</span><span>09:00</span><span>12:00</span><span>15:00</span><span>18:00</span><span>21:00</span><span>23:59</span>
+            </div>
+          </div>
+          <div style="flex:none;background:#2f8bff;color:#fff;border-radius:6px;padding:4px 10px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600">{{ hourLabel }}</div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ============ RISK DRAWER ============ -->
+    <sc-if value="{{ drawerOpen }}" hint-placeholder-val="{{ false }}">
+      <div data-drawer="" style="position:absolute;top:0;right:0;bottom:0;width:372px;background:#0a1120;border-left:1px solid #24427a;z-index:1300;display:flex;flex-direction:column;animation:slideL .22s ease;box-shadow:-24px 0 60px rgba(0,0,0,.5)" data-screen-label="Risk Drawer">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #16233c;flex:none">
+          <div style="display:flex;align-items:center;gap:10px">
+            <sc-if value="{{ drawerDetail }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ openDrawerList }}" style="background:none;border:none;color:#35c4f0;cursor:pointer;font-size:13px;padding:0" style-hover="color:#8fdcf7">← Back</button>
+            </sc-if>
+            <span style="font-size:12px;font-weight:700;letter-spacing:1.1px;color:#2f8bff">{{ drawerTitle }}</span>
+          </div>
+          <button onClick="{{ closeDrawer }}" style="background:none;border:none;color:#8296b8;font-size:16px;cursor:pointer;padding:0" style-hover="color:#fff">✕</button>
+        </div>
+
+        <!-- list view -->
+        <sc-if value="{{ drawerList }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ zones }}" as="z" hint-placeholder-count="5">
+              <div onClick="{{ z.open }}" style="background:#0c1526;border:1px solid #1c2c4a;border-radius:10px;padding:12px 14px;cursor:pointer" style-hover="border-color:#2f8bff;background:#101c33">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <div style="width:9px;height:9px;border-radius:50%;background:{{ z.color }}"></div>
+                    <span style="font-weight:600;font-size:13px">{{ z.name }}</span>
+                  </div>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5a6b8c">{{ z.id }}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#8296b8">
+                  <span>{{ z.countFmt }} vessels</span>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:{{ z.color }}">Risk {{ z.score }}</span>
+                </div>
+                <div style="height:5px;border-radius:3px;background:#121e34;margin-top:8px;overflow:hidden"><div style="height:100%;border-radius:3px;width:{{ z.pct }};background:{{ z.color }}"></div></div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <!-- detail view -->
+        <sc-if value="{{ drawerDetail }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;overflow-y:auto;padding:16px" data-screen-label="Zone Detail">
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+              <div style="width:74px;height:74px;flex:none;border-radius:50%;background:{{ zoneRing }};display:flex;align-items:center;justify-content:center">
+                <div style="width:58px;height:58px;border-radius:50%;background:#0a1120;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1">
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:700;color:{{ zoneColor }}">{{ zoneScore }}</span>
+                  <span style="font-size:8.5px;color:#5a6b8c;letter-spacing:.8px">RISK</span>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:16px;font-weight:700">{{ zoneName }}</div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5a6b8c;margin:2px 0 6px">{{ zoneId }} · Singapore Strait</div>
+                <span style="font-size:10px;font-weight:700;letter-spacing:.8px;color:{{ zoneColor }};border:1px solid {{ zoneColor }};border-radius:5px;padding:2px 8px">{{ zoneBand }}</span>
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:18px">
+              <div style="background:#0c1526;border:1px solid #1c2c4a;border-radius:9px;padding:9px 10px"><div style="font-size:9.5px;color:#5a6b8c;margin-bottom:2px">VESSELS</div><div style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700">{{ zoneCount }}</div></div>
+              <div style="background:#0c1526;border:1px solid #1c2c4a;border-radius:9px;padding:9px 10px"><div style="font-size:9.5px;color:#5a6b8c;margin-bottom:2px">INCIDENTS 30D</div><div style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700">{{ zoneIncidents }}</div></div>
+              <div style="background:#0c1526;border:1px solid #1c2c4a;border-radius:9px;padding:9px 10px"><div style="font-size:9.5px;color:#5a6b8c;margin-bottom:2px">CHANNEL</div><div style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700">{{ zoneWidth }}</div></div>
+            </div>
+
+            <div style="font-size:11px;font-weight:700;letter-spacing:1.1px;color:#8296b8;margin-bottom:10px">RISK FACTOR BREAKDOWN</div>
+            <div style="display:flex;flex-direction:column;gap:11px;margin-bottom:20px">
+              <sc-for list="{{ zoneFactors }}" as="f" hint-placeholder-count="5">
+                <div>
+                  <div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:4px">
+                    <span style="color:#cfe0ff">{{ f.name }}</span>
+                    <span style="font-family:'IBM Plex Mono',monospace;color:{{ f.color }};font-weight:600">{{ f.val }}</span>
+                  </div>
+                  <div style="height:6px;border-radius:3px;background:#121e34;overflow:hidden"><div style="height:100%;border-radius:3px;width:{{ f.pct }};background:{{ f.color }};transition:width .4s ease"></div></div>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="display:flex;gap:10px">
+              <button onClick="{{ zoomToZone }}" style="flex:1;background:#2f8bff;border:none;color:#fff;border-radius:8px;padding:11px 0;font-size:12px;font-weight:700;letter-spacing:.7px;cursor:pointer" style-hover="background:#4a9dff">ZOOM TO ZONE</button>
+              <button style="flex:1;background:#182741;border:1px solid #24427a;color:#cfe0ff;border-radius:8px;padding:11px 0;font-size:12px;font-weight:700;letter-spacing:.7px;cursor:pointer" style-hover="background:#1e3152">EXPORT REPORT</button>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <!-- mobile scrim for sidebar -->
+    <sc-if value="{{ scrimOpen }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ toggleSidebar }}" style="position:fixed;inset:64px 0 0 0;background:rgba(2,5,12,.5);z-index:1350"></div>
+    </sc-if>
+  </div>
+
+  <!-- ============ SETTINGS MODAL ============ -->
+  <sc-if value="{{ settingsOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:2000;background:rgba(2,5,12,.6);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center" onClick="{{ closeSettings }}" data-screen-label="Settings Modal">
+      <div onClick="{{ stop }}" style="width:400px;max-width:92vw;background:#0a1120;border:1px solid #24427a;border-radius:14px;box-shadow:0 30px 90px rgba(0,0,0,.7);animation:fadeUp .2s ease">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:15px 18px;border-bottom:1px solid #16233c">
+          <span style="font-size:14px;font-weight:700">Settings</span>
+          <button onClick="{{ closeSettings }}" style="background:none;border:none;color:#8296b8;font-size:16px;cursor:pointer;padding:0" style-hover="color:#fff">✕</button>
+        </div>
+        <div style="padding:16px 18px;display:flex;flex-direction:column;gap:16px">
+          <div>
+            <div style="font-size:11.5px;color:#8296b8;margin-bottom:7px">Speed Units</div>
+            <div style="display:flex;background:#0c1526;border:1px solid #1c2c4a;border-radius:8px;padding:3px;gap:3px">
+              <sc-for list="{{ unitOpts }}" as="u" hint-placeholder-count="3">
+                <button onClick="{{ u.pick }}" style="flex:1;border:none;border-radius:6px;padding:7px 0;font-size:11.5px;font-weight:600;cursor:pointer;background:{{ u.bg }};color:{{ u.fg }}">{{ u.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11.5px;color:#8296b8;margin-bottom:7px">Timezone</div>
+            <select value="{{ tz }}" onChange="{{ onTz }}" style="width:100%;background:#0c1526;border:1px solid #1c2c4a;color:#cfe0ff;border-radius:8px;padding:9px 10px;font-size:12px">
+              <option value="UTC">UTC (Coordinated Universal Time)</option>
+              <option value="SGT">SGT — Singapore (UTC+8)</option>
+              <option value="LOCAL">Browser Local Time</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:11.5px;color:#8296b8;margin-bottom:7px">Export Formats</div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <sc-for list="{{ exportOpts }}" as="e" hint-placeholder-count="3">
+                <label style="display:flex;align-items:center;gap:9px;font-size:12.5px;cursor:pointer;background:#0c1526;border:1px solid #1c2c4a;border-radius:8px;padding:9px 11px" style-hover="border-color:#2f8bff">
+                  <input type="checkbox" checked="{{ e.on }}" onChange="{{ e.toggle }}" style="width:15px;height:15px;accent-color:#2f8bff">
+                  <span style="font-weight:600">{{ e.label }}</span>
+                  <span style="color:#5a6b8c;font-size:10.5px;margin-left:auto;font-family:'IBM Plex Mono',monospace">{{ e.ext }}</span>
+                </label>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;padding:14px 18px;border-top:1px solid #16233c">
+          <button onClick="{{ closeSettings }}" style="background:#182741;border:1px solid #24427a;color:#cfe0ff;border-radius:8px;padding:9px 18px;font-size:12px;font-weight:600;cursor:pointer" style-hover="background:#1e3152">Cancel</button>
+          <button onClick="{{ closeSettings }}" style="background:#2f8bff;border:none;color:#fff;border-radius:8px;padding:9px 22px;font-size:12px;font-weight:700;cursor:pointer" style-hover="background:#4a9dff">Done</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- toast -->
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;bottom:120px;left:50%;transform:translateX(-50%);z-index:2500;background:#12233f;border:1px solid #2f8bff;color:#e8f0ff;border-radius:9px;padding:9px 18px;font-size:12px;font-weight:600;animation:fadeUp .2s ease;box-shadow:0 12px 40px rgba(0,0,0,.5)">{{ toast }}</div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;heatIntensity&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:0.4,&quot;min&quot;:0.4,&quot;max&quot;:2,&quot;step&quot;:0.1,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Map&quot;}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.mapRef = React.createRef();
+    this.threeRef = React.createRef();
+    this.coordRef = React.createRef();
+    this.popupRef = React.createRef();
+    this.asideRef = React.createRef();
+    this.state = {
+      hour: 15, playing: false, speed: 1,
+      dateStart: '2026-06-18', dateEnd: '2026-06-25',
+      vesselType: 'all', density: 75, search: '', searchQ: '',
+      layers: { traj: true, heat: true, zones: true, ports: true, routes: false, labels: true },
+      drawer: null, popup: null, three: null,
+      settingsOpen: false, units: 'kn', tz: 'UTC',
+      exports: { csv: true, geojson: false, pdf: false },
+      sidebarOpen: false, sidebarHidden: false, basemap: 'simple', clock: '', toast: null
+    };
+    this.buildData();
+  }
+
+  // ---------- data ----------
+  rand(seed) { let s = seed; return () => { s = (s * 16807 + 19) % 2147483647; return (s % 10000) / 10000; }; }
+
+  buildData() {
+    const mkPoly = (c, r, seed) => {
+      const rnd = this.rand(seed), pts = [];
+      for (let i = 0; i < 7; i++) {
+        const a = (i / 7) * Math.PI * 2, rr = r * (0.7 + rnd() * 0.6);
+        pts.push([c[0] + Math.sin(a) * rr, c[1] + Math.cos(a) * rr * 1.3]);
+      }
+      return pts;
+    };
+    this.ZONES = [
+      { id: 'Z-18', name: 'Phillip Channel East', count: 1897, score: 92, center: [0.98, 104.36], incidents: 14, width: '2.4 nm' },
+      { id: 'Z-07', name: 'Singapore Strait West', count: 1543, score: 87, center: [1.10, 103.50], incidents: 11, width: '3.1 nm' },
+      { id: 'Z-12', name: 'Johor Approach', count: 1268, score: 76, center: [1.46, 104.22], incidents: 6, width: '4.8 nm' },
+      { id: 'Z-03', name: 'Karimun Crossing', count: 982, score: 65, center: [0.92, 103.38], incidents: 4, width: '5.5 nm' },
+      { id: 'Z-09', name: 'Batam Anchorage', count: 743, score: 58, center: [1.08, 104.02], incidents: 3, width: '6.2 nm' }
+    ];
+    this.ZONES.forEach((z, i) => { z.poly = mkPoly(z.center, 0.09 + z.score / 900, 137 + i * 71); });
+
+    const names = ['MERIDIAN STAR', 'PACIFIC HARRIER', 'ORION TRADER', 'CELESTE AURORA', 'KESTREL BAY', 'NORDIC LYNX', 'AZURE PIONEER', 'SELAT MAJU', 'HARBOR CREST', 'IRON ALBATROSS', 'COBALT WAVE', 'TANJUNG SARI', 'VELA HORIZON', 'GOLDEN ISTHMUS', 'RIAU EXPRESS', 'MONSOON GLORY'];
+    const types = ['Container Ship', 'Tanker', 'Bulk Carrier', 'Tug', 'Passenger'];
+    const rnd = this.rand(4242);
+    this.VESSELS = [];
+    // main lane: Port Klang -> Phillip Channel, roughly NW to SE
+    for (let i = 0; i < 42; i++) {
+      const t = rnd();
+      const lat = 1.28 - t * 0.34 + (rnd() - 0.5) * 0.22;
+      const lng = 103.42 + t * 0.98 + (rnd() - 0.5) * 0.2;
+      const anchored = rnd() < 0.22;
+      const heading = anchored ? Math.floor(rnd() * 360) : (105 + (rnd() - 0.5) * 50 + (rnd() < 0.5 ? 0 : 180)) % 360;
+      this.VESSELS.push({
+        mmsi: String(563000000 + Math.floor(rnd() * 999999)),
+        name: names[i % names.length] + (i >= names.length ? ' ' + (2 + Math.floor(i / names.length)) : ''),
+        type: types[Math.floor(rnd() * types.length)],
+        latlng: [lat, lng],
+        heading: Math.round(heading),
+        speedKn: anchored ? +(rnd() * 0.4).toFixed(1) : +(7 + rnd() * 11).toFixed(1),
+        anchored,
+        loa: 180 + Math.floor(rnd() * 220), beam: 28 + Math.floor(rnd() * 24), draft: +(9 + rnd() * 7).toFixed(1)
+      });
+    }
+    this.PORTS = [
+      { name: 'Singapore', latlng: [1.264, 103.84] },
+      { name: 'Tanjung Pelepas', latlng: [1.362, 103.55] },
+      { name: 'Batam', latlng: [1.13, 104.05] },
+      { name: 'Johor Bahru', latlng: [1.462, 103.79] },
+      { name: 'Port Klang', latlng: [3.00, 101.39] },
+      { name: 'Penang', latlng: [5.42, 100.34] },
+      { name: 'Tanjung Priok (Jakarta)', latlng: [-6.10, 106.88] },
+      { name: 'Laem Chabang', latlng: [13.08, 100.88] },
+      { name: 'Ho Chi Minh City', latlng: [10.77, 106.70] }
+    ];
+    this.COUNTRIES = [
+      { name: 'Singapore', latlng: [1.35, 103.82], zoom: 10 },
+      { name: 'Malaysia', latlng: [3.9, 102.3], zoom: 6 },
+      { name: 'Indonesia', latlng: [-2.5, 118.0], zoom: 5 },
+      { name: 'Thailand', latlng: [15.0, 101.0], zoom: 6 },
+      { name: 'Vietnam', latlng: [16.0, 107.5], zoom: 6 }
+    ];
+    this.LANES = [
+      { pts: [[1.32, 103.30], [1.20, 103.62], [1.14, 103.85], [1.09, 104.10], [0.97, 104.42]], color: '#35c4f0' },
+      { pts: [[1.24, 103.30], [1.13, 103.60], [1.07, 103.88], [1.02, 104.12], [0.90, 104.40]], color: '#35e07c' },
+      { pts: [[1.264, 103.84], [1.35, 104.05], [1.46, 104.22]], color: '#ffd23e' }
+    ];
+  }
+
+  scoreColor(s) { return s >= 85 ? '#ff4d5e' : s >= 70 ? '#ff9f2e' : '#ffd23e'; }
+  scoreBand(s) { return s >= 85 ? 'SEVERE' : s >= 70 ? 'HIGH' : 'ELEVATED'; }
+  zoneFactors(z) {
+    const rnd = this.rand(z.score * 991);
+    const base = z.score;
+    const mk = (name, v) => ({ name, v: Math.max(18, Math.min(98, Math.round(v))) });
+    return [
+      mk('Traffic density', base + 4 - rnd() * 6),
+      mk('Crossing conflicts', base - 4 - rnd() * 14),
+      mk('Channel constraint', base - 8 - rnd() * 18),
+      mk('Weather exposure', base - 22 - rnd() * 18),
+      mk('AIS signal gaps', base - 30 - rnd() * 16)
+    ].map(f => ({ name: f.name, val: f.v, pct: f.v + '%', color: this.scoreColor(f.v) }));
+  }
+
+  // ---------- lifecycle ----------
+  componentDidMount() {
+    this.alive = true;
+    this.clockTimer = setInterval(() => this.tickClock(), 1000);
+    this.tickClock();
+    const wait = () => {
+      if (!this.alive) return;
+      if (window.L && window.L.heatLayer) this.initMap();
+      else setTimeout(wait, 120);
+    };
+    wait();
+  }
+  componentWillUnmount() {
+    this.alive = false;
+    clearInterval(this.clockTimer); clearInterval(this.playTimer);
+    this.teardownThree();
+    if (this.map) { this.map.remove(); this.map = null; }
+  }
+
+  tickClock() {
+    const now = new Date();
+    const tz = this.state.tz;
+    let str, label;
+    if (tz === 'SGT') { str = now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Singapore', hour12: false }); label = 'SGT'; }
+    else if (tz === 'LOCAL') { str = now.toLocaleTimeString('en-GB', { hour12: false }); label = 'Local'; }
+    else { str = now.toLocaleTimeString('en-GB', { timeZone: 'UTC', hour12: false }); label = 'UTC'; }
+    this.setState({ clock: str + ' ' + label });
+  }
+
+  // ---------- map ----------
+  initMap() {
+    const node = this.mapRef.current;
+    if (!node || this.map) return;
+    const L = window.L;
+    const map = L.map(node, { zoomControl: false, minZoom: 4, maxZoom: 14, preferCanvas: true });
+    this.map = map;
+    map.setView([1.16, 103.86], 10);
+    this.applyBasemap();
+
+    // risk zones
+    this.zoneLayer = L.layerGroup();
+    this.ZONES.forEach(z => {
+      const col = this.scoreColor(z.score);
+      const poly = L.polygon(z.poly, { color: col, weight: 2, dashArray: '7 6', fillColor: col, fillOpacity: 0.13 });
+      poly.on('click', () => this.openZone(z.id));
+      poly.on('mouseover', () => poly.setStyle({ fillOpacity: 0.24, weight: 2.5 }));
+      poly.on('mouseout', () => poly.setStyle({ fillOpacity: 0.13, weight: 2 }));
+      poly.addTo(this.zoneLayer);
+      const chip = L.marker(z.center, {
+        interactive: true,
+        icon: L.divIcon({ className: '', iconSize: [76, 34], iconAnchor: [38, 17], html: '<div style="background:' + col + ';color:#0a0f1c;font:600 11px IBM Plex Mono,monospace;border-radius:6px;padding:3px 0;text-align:center;line-height:1.2;box-shadow:0 4px 14px rgba(0,0,0,.5)">' + z.count.toLocaleString() + '<br>vessels</div>' })
+      });
+      chip.on('click', () => this.openZone(z.id));
+      chip.addTo(this.zoneLayer);
+    });
+    this.zoneLayer.addTo(map);
+
+    // ports
+    this.portLayer = L.layerGroup();
+    this.PORTS.forEach(p => {
+      L.circleMarker(p.latlng, { radius: 5, color: '#cfe0ff', weight: 2, fillColor: '#2f8bff', fillOpacity: 1 })
+        .bindTooltip(p.name, { permanent: true, direction: 'right', offset: [8, 0], className: 'mra-port' })
+        .addTo(this.portLayer);
+    });
+    this.portLayer.addTo(map);
+
+    // lanes
+    this.trajLayer = L.layerGroup();
+    this.LANES.forEach(l => L.polyline(l.pts, { color: l.color, weight: 2, opacity: 0.65 }).addTo(this.trajLayer));
+    this.trajLayer.addTo(map);
+    this.routeLayer = L.layerGroup();
+    this.LANES.forEach(l => L.polyline(l.pts.map(p => [p[0] + 0.03, p[1]]), { color: '#8296b8', weight: 1.5, dashArray: '4 7', opacity: 0.7 }).addTo(this.routeLayer));
+
+    // vessels
+    this.vesselLayer = L.layerGroup();
+    this.vesselMarkers = this.VESSELS.map(v => {
+      const m = L.marker(v.latlng, { icon: this.vesselIcon(v) });
+      m.on('click', () => this.openVessel(v));
+      m.addTo(this.vesselLayer);
+      return m;
+    });
+    this.vesselLayer.addTo(map);
+
+    // heat
+    this.heat = L.heatLayer([], {
+      radius: 34, blur: 26, maxZoom: 12, max: 1.0,
+      gradient: { 0.15: '#1c2fd4', 0.35: '#00b7e8', 0.55: '#3fe05f', 0.72: '#ffe14d', 0.88: '#ff8a2e', 1: '#ff3b2e' }
+    }).addTo(map);
+    this.updateHeat();
+
+    // perf: dim heavy overlays while panning/zooming, restore on end
+    const overlayDim = on => {
+      const p = map.getPane('overlayPane');
+      if (p) { p.style.transition = on ? 'none' : 'opacity .25s ease'; p.style.opacity = on ? '0.35' : '1'; }
+    };
+    map.on('movestart zoomstart', () => overlayDim(true));
+    map.on('moveend zoomend', () => { overlayDim(false); this.repositionPopup(); });
+    // perf: rAF-throttled direct-DOM popup tracking during pan (no React re-render)
+    map.on('move zoom', () => {
+      if (!this.state.popup || this._rafPending) return;
+      this._rafPending = true;
+      requestAnimationFrame(() => {
+        this._rafPending = false;
+        const n = this.popupRef.current;
+        if (n && this.state.popup) {
+          const p = this.projectV(this.state.popup.v);
+          n.style.left = p.x + 'px'; n.style.top = (p.y - 14) + 'px';
+        }
+      });
+    });
+    map.on('click', () => this.setState({ popup: null }));
+    map.on('mousemove', e => {
+      const n = this.coordRef.current; if (!n) return;
+      const la = e.latlng.lat, lo = e.latlng.lng;
+      n.textContent = Math.abs(la).toFixed(4) + '° ' + (la >= 0 ? 'N' : 'S') + ' · ' + Math.abs(lo).toFixed(4) + '° ' + (lo >= 0 ? 'E' : 'W');
+    });
+    map.on('mouseout', () => { const n = this.coordRef.current; if (n) n.textContent = '—° N · —° E'; });
+    this.forceUpdate();
+  }
+
+  vesselIcon(v, selected) {
+    const matches = this.vesselMatches(v);
+    const col = selected ? '#ffffff' : v.anchored ? '#ff4d5e' : '#35e07c';
+    const op = matches ? 1 : 0.15;
+    const size = selected ? 15 : 11;
+    return window.L.divIcon({
+      className: '', iconSize: [size * 2, size * 2], iconAnchor: [size, size],
+      html: '<div style="transform:rotate(' + v.heading + 'deg);opacity:' + op + ';width:' + size * 2 + 'px;height:' + size * 2 + 'px;display:flex;align-items:center;justify-content:center;cursor:pointer"><div style="width:0;height:0;border-left:' + size * 0.45 + 'px solid transparent;border-right:' + size * 0.45 + 'px solid transparent;border-bottom:' + size * 1.3 + 'px solid ' + col + ';filter:drop-shadow(0 0 4px rgba(0,0,0,.8))"></div></div>'
+    });
+  }
+  vesselMatches(v) {
+    const { vesselType, search } = this.state;
+    if (vesselType !== 'all' && v.type !== vesselType) return false;
+    if (search && !(v.name.toLowerCase().includes(search.toLowerCase()) || v.mmsi.includes(search))) return false;
+    return true;
+  }
+  refreshVessels() {
+    if (!this.vesselMarkers) return;
+    this.vesselMarkers.forEach((m, i) => {
+      const v = this.VESSELS[i];
+      m.setIcon(this.vesselIcon(v, this.state.popup && this.state.popup.v === v));
+    });
+  }
+
+  dateSeed() {
+    const s = this.state.dateStart + this.state.dateEnd;
+    let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 997;
+    return h / 997;
+  }
+  hourProfile(h) { return 0.55 + 0.45 * Math.cos((h - 15) / 24 * Math.PI * 2); }
+
+  updateHeat() {
+    if (!this.heat) return;
+    const { hour, density, layers } = this.state;
+    if (!layers.heat) { this.heat.setLatLngs([]); return; }
+    const prof = this.hourProfile(hour);
+    const ds = this.dateSeed();
+    const intensity = +(this.props.heatIntensity ?? 1);
+    const pts = [];
+    this.ZONES.forEach((z, zi) => {
+      const rnd = this.rand(Math.floor(hour * 4) * 13 + zi * 101 + Math.floor(ds * 100));
+      const n = Math.round((z.count / 45) * prof * (0.75 + ds * 0.5));
+      for (let i = 0; i < n; i++) {
+        const a = rnd() * Math.PI * 2, r = Math.pow(rnd(), 1.6) * 0.11;
+        const w = (0.35 + rnd() * 0.65) * (z.score / 100) * intensity;
+        if (w * 100 >= (100 - density) * 0.35) pts.push([z.center[0] + Math.sin(a) * r, z.center[1] + Math.cos(a) * r * 1.3, w]);
+      }
+    });
+    // lane wash
+    this.LANES.forEach((l, li) => {
+      const rnd = this.rand(Math.floor(hour * 4) * 7 + li * 313);
+      for (let s = 0; s < l.pts.length - 1; s++) {
+        for (let i = 0; i < 26; i++) {
+          const t = rnd();
+          const lat = l.pts[s][0] + (l.pts[s + 1][0] - l.pts[s][0]) * t + (rnd() - 0.5) * 0.05;
+          const lng = l.pts[s][1] + (l.pts[s + 1][1] - l.pts[s][1]) * t + (rnd() - 0.5) * 0.05;
+          pts.push([lat, lng, 0.28 * prof * intensity]);
+        }
+      }
+    });
+    this.heat.setLatLngs(pts);
+  }
+
+  toggleLayer(key) {
+    const layers = { ...this.state.layers, [key]: !this.state.layers[key] };
+    this.setState({ layers }, () => {
+      const m = this.map; if (!m) return;
+      const pairs = { traj: this.trajLayer, zones: this.zoneLayer, ports: this.portLayer, routes: this.routeLayer };
+      if (key === 'heat') this.updateHeat();
+      else if (key === 'labels') this.applyBasemap();
+      else { const l = pairs[key]; if (layers[key]) l.addTo(m); else m.removeLayer(l); }
+    });
+  }
+
+  applyBasemap() {
+    const L = window.L, m = this.map; if (!m) return;
+    if (this.tiles) m.removeLayer(this.tiles);
+    if (this.seamark) { m.removeLayer(this.seamark); this.seamark = null; }
+    const b = this.state.basemap;
+    const perf = { maxZoom: 19, keepBuffer: 4, updateWhenIdle: false, updateWhenZooming: false };
+    if (b === 'satellite') {
+      this.tiles = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Esri, Maxar, Earthstar Geographics', ...perf });
+    } else if (b === 'nautical') {
+      this.tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap · OpenSeaMap', ...perf });
+      this.seamark = L.tileLayer('https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', { ...perf, maxZoom: 18 });
+    } else {
+      this.tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/' + (this.state.layers.labels ? 'dark_all' : 'dark_nolabels') + '/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap &copy; CARTO', subdomains: 'abcd', ...perf });
+    }
+    this.tiles.addTo(m);
+    this.tiles.bringToBack();
+    if (this.seamark) this.seamark.addTo(m);
+  }
+
+  // ---------- interactions ----------
+  setHour(h) { this.setState({ hour: h }, () => this.updateHeat()); }
+  openZone(id) { this.setState({ drawer: id, sidebarOpen: false }); }
+  openVessel(v) {
+    this.popupV = v;
+    this.setState({ popup: { v, ...this.projectV(v) } }, () => this.refreshVessels());
+  }
+  projectV(v) {
+    if (!this.map) return { x: 0, y: 0 };
+    const p = this.map.latLngToContainerPoint(v.latlng);
+    return { x: p.x, y: p.y };
+  }
+  repositionPopup() {
+    if (this.state.popup) this.setState({ popup: { ...this.state.popup, ...this.projectV(this.state.popup.v) } });
+  }
+  showToast(msg) {
+    clearTimeout(this.toastTimer);
+    this.setState({ toast: msg });
+    this.toastTimer = setTimeout(() => this.setState({ toast: null }), 2200);
+  }
+
+  // ---------- 3D ----------
+  open3DPanel() {
+    const v = this.state.popup && this.state.popup.v;
+    if (!v) return;
+    this.setState({ three: v, popup: null }, () => { this.refreshVessels(); setTimeout(() => this.initThree(), 60); });
+  }
+  teardownThree() {
+    this.threeActive = false;
+    if (this.renderer) {
+      this.renderer.dispose();
+      if (this.renderer.domElement && this.renderer.domElement.parentNode) this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
+      this.renderer = null;
+    }
+  }
+  initThree() {
+    const T = window.THREE, node = this.threeRef.current;
+    if (!T || !node || !this.state.three) return;
+    this.teardownThree();
+    const w = node.clientWidth, h = node.clientHeight;
+    const renderer = new T.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(w, h); renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
+    node.appendChild(renderer.domElement);
+    this.renderer = renderer;
+    const scene = new T.Scene();
+    scene.background = new T.Color(0x060d1c);
+    scene.fog = new T.Fog(0x060d1c, 60, 260);
+    const cam = new T.PerspectiveCamera(38, w / h, 0.1, 500);
+    cam.position.set(0, 9, 62); cam.lookAt(0, 5, 0);
+    const hemi = new T.HemisphereLight(0x8fb8ff, 0x0a1830, 1.1); scene.add(hemi);
+    const dir = new T.DirectionalLight(0xffffff, 1.6); dir.position.set(30, 40, 25); scene.add(dir);
+    // day/night palette
+    const skyNight = new T.Color(0x04070f), skyDay = new T.Color(0x76aede), skyDawn = new T.Color(0xc97a4a);
+    const seaNight = new T.Color(0x0d3560), seaDay = new T.Color(0x1470c4);
+    // sun, moon, stars
+    const sun = new T.Mesh(new T.SphereGeometry(6, 16, 16), new T.MeshBasicMaterial({ color: 0xffd98a, fog: false })); scene.add(sun);
+    const moon = new T.Mesh(new T.SphereGeometry(3.4, 16, 16), new T.MeshBasicMaterial({ color: 0xd7e0ef, fog: false })); scene.add(moon);
+    const srnd = this.rand(99), starPos = [];
+    for (let i = 0; i < 240; i++) starPos.push((srnd() * 2 - 1) * 240, 15 + srnd() * 130, -130 - srnd() * 90);
+    const starG = new T.BufferGeometry();
+    starG.setAttribute('position', new T.Float32BufferAttribute(starPos, 3));
+    const starM = new T.PointsMaterial({ color: 0xbfd0ea, size: 0.8, transparent: true, opacity: 0, fog: false, sizeAttenuation: false });
+    scene.add(new T.Points(starG, starM));
+
+    // animated sea: segmented plane + layered sine displacement + ripple normal map
+    const seaGeo = new T.PlaneGeometry(400, 400, 96, 96);
+    const nmC = document.createElement('canvas'); nmC.width = nmC.height = 256;
+    const nctx = nmC.getContext('2d');
+    const nrnd = this.rand(777);
+    nctx.fillStyle = '#8080ff'; nctx.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 2600; i++) {
+      const x = nrnd() * 256, y = nrnd() * 256, r = 1 + nrnd() * 3;
+      const gd = nctx.createRadialGradient(x, y, 0, x, y, r);
+      const dx = Math.round(118 + nrnd() * 40), dy = Math.round(118 + nrnd() * 40);
+      gd.addColorStop(0, 'rgba(' + dx + ',' + dy + ',255,0.55)');
+      gd.addColorStop(1, 'rgba(128,128,255,0)');
+      nctx.fillStyle = gd; nctx.beginPath(); nctx.arc(x, y, r, 0, 7); nctx.fill();
+    }
+    const nmTex = new T.CanvasTexture(nmC);
+    nmTex.wrapS = nmTex.wrapT = T.RepeatWrapping; nmTex.repeat.set(14, 14);
+    const seaMat = new T.MeshStandardMaterial({
+      color: 0x1266ad, roughness: 0.3, metalness: 0.42,
+      normalMap: nmTex, normalScale: new T.Vector2(0.35, 0.35)
+    });
+    const sea = new T.Mesh(seaGeo, seaMat);
+    sea.rotation.x = -Math.PI / 2; scene.add(sea);
+    const seaPos = seaGeo.attributes.position;
+    const seaBase = seaPos.array.slice();
+    const waveAt = (x, y, t) =>
+      Math.sin(x * 0.085 + y * 0.05 + t * 1.15) * 0.85 +
+      Math.sin(x * 0.045 - y * 0.11 + t * 0.7) * 0.55;
+
+    // ship group
+    const g = new T.Group();
+    const hullMat = new T.MeshStandardMaterial({ color: 0x21395f, roughness: 0.6 });
+    const hull = new T.Mesh(new T.BoxGeometry(40, 6, 9), hullMat); hull.position.y = 2; g.add(hull);
+    const bow = new T.Mesh(new T.ConeGeometry(4.5, 8, 4), hullMat);
+    bow.rotation.z = -Math.PI / 2; bow.rotation.y = Math.PI / 4; bow.position.set(24, 2, 0); bow.scale.set(1, 1, 1.32); g.add(bow);
+    const stripe = new T.Mesh(new T.BoxGeometry(40.2, 1, 9.2), new T.MeshStandardMaterial({ color: 0xb3341f, roughness: 0.7 }));
+    stripe.position.y = -0.4; g.add(stripe);
+    // containers
+    const cols = [0xd85b3a, 0x2f8bff, 0x2fae62, 0xe8c53c, 0x8a6bd8, 0x35c4f0];
+    const isContainer = this.state.three.type === 'Container Ship';
+    if (isContainer) {
+      for (let bay = 0; bay < 8; bay++) for (let tier = 0; tier < 3; tier++) for (let row = 0; row < 2; row++) {
+        const c = new T.Mesh(new T.BoxGeometry(4.2, 2.3, 4.1), new T.MeshStandardMaterial({ color: cols[(bay * 7 + tier * 3 + row) % cols.length], roughness: 0.65 }));
+        c.position.set(-16 + bay * 4.6, 6.3 + tier * 2.4, -2.2 + row * 4.4);
+        g.add(c);
+      }
+    } else {
+      const tank = new T.Mesh(new T.CylinderGeometry(2.6, 2.6, 30, 18), new T.MeshStandardMaterial({ color: 0x8d99ad, roughness: 0.45, metalness: 0.5 }));
+      tank.rotation.z = Math.PI / 2; tank.position.set(-2, 6.6, 0); g.add(tank);
+    }
+    // bulbous bow
+    const bulb = new T.Mesh(new T.SphereGeometry(1.5, 10, 8), hullMat);
+    bulb.position.set(26.5, -0.6, 0); bulb.scale.set(1.9, 1, 1); g.add(bulb);
+    // superstructure: stepped white block + window bands + bridge wings
+    const ssMat = new T.MeshStandardMaterial({ color: 0xdde6f2, roughness: 0.5 });
+    const winMat = new T.MeshStandardMaterial({ color: 0x0c1a2e, roughness: 0.2, metalness: 0.6, emissive: 0x35c4f0, emissiveIntensity: 0.3 });
+    const ss1 = new T.Mesh(new T.BoxGeometry(5.2, 6, 8.4), ssMat); ss1.position.set(-16.5, 8, 0); g.add(ss1);
+    const ss2 = new T.Mesh(new T.BoxGeometry(4.6, 3.4, 7.2), ssMat); ss2.position.set(-16.5, 12.7, 0); g.add(ss2);
+    const wing = new T.Mesh(new T.BoxGeometry(3.4, 1.6, 11.4), ssMat); wing.position.set(-16.5, 14.2, 0); g.add(wing);
+    const winBand = new T.Mesh(new T.BoxGeometry(3.5, 0.9, 11.5), winMat); winBand.position.set(-16.45, 14.35, 0); g.add(winBand);
+    for (let d = 0; d < 3; d++) {
+      const row = new T.Mesh(new T.BoxGeometry(0.2, 0.7, 6.6), winMat);
+      row.position.set(-13.85, 8.2 + d * 1.9, 0); g.add(row);
+    }
+    // funnel with cap + masts
+    const funnel = new T.Mesh(new T.CylinderGeometry(1.5, 1.8, 4.6, 12), new T.MeshStandardMaterial({ color: 0xb3341f, roughness: 0.6 }));
+    funnel.position.set(-20.5, 12.4, 0); g.add(funnel);
+    const funnelTop = new T.Mesh(new T.CylinderGeometry(1.52, 1.52, 0.9, 12), new T.MeshStandardMaterial({ color: 0x101a2e }));
+    funnelTop.position.set(-20.5, 14.6, 0); g.add(funnelTop);
+    const mastMat = new T.MeshStandardMaterial({ color: 0x8d99ad, metalness: 0.6, roughness: 0.4 });
+    const mastF = new T.Mesh(new T.CylinderGeometry(0.16, 0.24, 7, 8), mastMat); mastF.position.set(23, 8.5, 0); g.add(mastF);
+    const mastA = new T.Mesh(new T.CylinderGeometry(0.14, 0.2, 4.5, 8), mastMat); mastA.position.set(-16.5, 18, 0); g.add(mastA);
+    const yard = new T.Mesh(new T.CylinderGeometry(0.1, 0.1, 3.4, 6), mastMat); yard.rotation.x = Math.PI / 2; yard.position.set(-16.5, 17.2, 0); g.add(yard);
+    scene.add(g);
+
+    // geo-referenced landmass on the horizon when the vessel is near a coast
+    const LAND = [
+      { ll: [1.30, 103.82] },  // Singapore
+      { ll: [1.45, 103.76] },  // Johor
+      { ll: [1.05, 104.03] },  // Batam
+      { ll: [1.07, 104.45] },  // Bintan
+      { ll: [1.05, 103.42] }   // Karimun
+    ];
+    const vv = this.state.three;
+    const dKm = (a, b) => {
+      const dy = (a[0] - b[0]) * 111, dx = (a[1] - b[1]) * 111 * Math.cos(a[0] * Math.PI / 180);
+      return Math.hypot(dx, dy);
+    };
+    let nearest = null;
+    LAND.forEach(l => { const d = dKm(vv.latlng, l.ll); if (!nearest || d < nearest.d) nearest = { ll: l.ll, d }; });
+    if (nearest && nearest.d < 30) {
+      const landGroup = new T.Group();
+      // true bearing vessel → land, relative to the vessel's heading (bow = +x, viewer faces -z)
+      const brg = Math.atan2(
+        (nearest.ll[1] - vv.latlng[1]) * Math.cos(vv.latlng[0] * Math.PI / 180),
+        nearest.ll[0] - vv.latlng[0]
+      );
+      const rel = brg - vv.heading * Math.PI / 180;
+      const xOff = Math.sin(rel) * 110;
+      const dist = 150 + nearest.d * 2.5;
+      const scaleF = Math.max(0.35, 1 - nearest.d / 34);
+      const landMat = new T.MeshStandardMaterial({ color: 0x24405c, roughness: 1, flatShading: true });
+      const lrnd = this.rand(Math.round(nearest.d * 91));
+      for (let i = 0; i < 6; i++) {
+        const hw = 30 + lrnd() * 26, hh = (7 + lrnd() * 11) * scaleF;
+        const hill = new T.Mesh(new T.ConeGeometry(hw, hh, 5), landMat);
+        hill.position.set(xOff + (i - 2.5) * 34 + (lrnd() - 0.5) * 14, hh / 2 - 0.6, -dist - lrnd() * 30);
+        hill.scale.z = 0.45;
+        landGroup.add(hill);
+      }
+      scene.add(landGroup);
+    }
+
+    // drag orbit
+    let rotY = -0.3, targetRot = -0.3, dragging = false, lastX = 0;
+    node.onpointerdown = e => { dragging = true; lastX = e.clientX; node.setPointerCapture(e.pointerId); node.style.cursor = 'grabbing'; };
+    node.onpointermove = e => { if (dragging) { targetRot += (e.clientX - lastX) * 0.008; lastX = e.clientX; } };
+    node.onpointerup = () => { dragging = false; node.style.cursor = 'grab'; };
+
+    this.threeActive = true;
+    let t = 0;
+    const loop = () => {
+      if (!this.threeActive || !this.renderer) return;
+      t += 0.016;
+      // day/night cycle driven by the timeline hour
+      const hr = this.state.hour;
+      const dayF = Math.max(0, Math.sin((hr - 6) / 12 * Math.PI));
+      const duskF = dayF > 0 ? Math.max(0, 1 - Math.abs(dayF - 0.2) * 5) : 0;
+      const sky = skyNight.clone().lerp(skyDay, dayF);
+      if (duskF > 0) sky.lerp(skyDawn, duskF * 0.55);
+      scene.background.copy(sky);
+      scene.fog.color.copy(sky);
+      seaMat.color.copy(seaNight.clone().lerp(seaDay, dayF));
+      dir.intensity = 0.25 + dayF * 1.7;
+      hemi.intensity = 0.35 + dayF * 0.95;
+      const sunA = (hr - 6) / 12 * Math.PI;
+      sun.position.set(Math.cos(sunA) * 150, Math.sin(sunA) * 95, -140);
+      sun.visible = Math.sin(sunA) > 0.02;
+      dir.position.set(sun.position.x * 0.4, Math.max(14, sun.position.y * 0.6), 25);
+      const moonA = (((hr + 12) % 24) - 6) / 12 * Math.PI;
+      moon.position.set(Math.cos(moonA) * 150, Math.sin(moonA) * 95, -140);
+      moon.visible = Math.sin(moonA) > 0.02 && dayF < 0.3;
+      starM.opacity = Math.max(0, 1 - dayF * 2.4) * 0.9;
+      winMat.emissiveIntensity = 0.15 + (1 - dayF) * 1.1;
+      // layered sine-wave vertex displacement (2 overlapping wave directions)
+      for (let i = 0; i < seaPos.count; i++) {
+        seaPos.setZ(i, waveAt(seaBase[i * 3], seaBase[i * 3 + 1], t));
+      }
+      seaPos.needsUpdate = true;
+      seaGeo.computeVertexNormals();
+      nmTex.offset.set(t * 0.018, t * 0.011);
+      rotY += (targetRot - rotY) * 0.08;
+      g.rotation.y = rotY;
+      g.position.y = waveAt(0, 0, t) * 0.35;
+      g.rotation.z = Math.sin(t * 0.7) * 0.014;
+      g.rotation.x = Math.sin(t * 0.55 + 1.3) * 0.008;
+      renderer.render(scene, cam);
+      requestAnimationFrame(loop);
+    };
+    loop();
+  }
+
+  // ---------- formatting ----------
+  fmtSpeed(kn) {
+    const u = this.state.units;
+    if (u === 'kmh') return (kn * 1.852).toFixed(1) + ' km/h';
+    if (u === 'mph') return (kn * 1.15078).toFixed(1) + ' mph';
+    return kn.toFixed(1) + ' kn';
+  }
+  hourLabel(h) {
+    const hh = Math.floor(h), mm = Math.round((h - hh) * 60);
+    return String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
+  }
+  fmtDate(iso) {
+    const d = new Date(iso + 'T00:00:00Z');
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
+  }
+
+  // ---------- unified search ----------
+  searchVals() {
+    const q = this.state.searchQ.trim().toLowerCase();
+    const fly = (latlng, zoom, after) => {
+      this.setState({ searchQ: '', sidebarOpen: false });
+      if (this.map) this.map.flyTo(latlng, zoom, { duration: 1.3 });
+      if (after) setTimeout(after, 1450);
+    };
+    const groups = [];
+    if (q.length >= 2) {
+      const ports = this.PORTS.filter(p => p.name.toLowerCase().includes(q)).slice(0, 5)
+        .map(p => ({ name: p.name, sub: 'Port', go: () => fly(p.latlng, 11.5) }));
+      const countries = this.COUNTRIES.filter(c => c.name.toLowerCase().includes(q)).slice(0, 5)
+        .map(c => ({ name: c.name, sub: 'Country', go: () => fly(c.latlng, c.zoom) }));
+      const vessels = this.VESSELS.filter(v => v.name.toLowerCase().includes(q) || v.mmsi.includes(q)).slice(0, 6)
+        .map(v => ({ name: v.name, sub: v.mmsi, go: () => fly(v.latlng, 12.5, () => this.openVessel(v)) }));
+      if (ports.length) groups.push({ label: 'PORTS', items: ports });
+      if (countries.length) groups.push({ label: 'COUNTRIES', items: countries });
+      if (vessels.length) groups.push({ label: 'VESSELS', items: vessels });
+    }
+    return {
+      searchQ: this.state.searchQ,
+      onSearchQ: e => this.setState({ searchQ: e.target.value }),
+      searchResultsOpen: q.length >= 2,
+      searchGroups: groups,
+      searchEmpty: q.length >= 2 && groups.length === 0
+    };
+  }
+
+  // ---------- render ----------
+  renderVals() {
+    const s = this.state;
+    const ds = this.dateSeed(), prof = this.hourProfile(s.hour);
+    const zone = this.ZONES.find(z => z.id === s.drawer);
+    const fmt = n => n.toLocaleString('en-US');
+
+    const kpis = [
+      { label: 'Total Vessels', value: fmt(Math.round(12487 * (0.85 + ds * 0.3))), delta: '↑ 8.4%', deltaColor: '#35e07c', tint: '#2f8bff', tintBg: 'rgba(47,139,255,.14)' },
+      { label: 'Active Trajectories', value: fmt(Math.round(3215 * (0.8 + ds * 0.3) * (0.6 + prof * 0.5))), delta: '↑ 6.7%', deltaColor: '#35e07c', tint: '#35e07c', tintBg: 'rgba(53,224,124,.13)' },
+      { label: 'High Risk Zones', value: String(Math.round(14 + ds * 8)), delta: '↑ 2', deltaColor: '#ff9f2e', tint: '#ff9f2e', tintBg: 'rgba(255,159,46,.13)' },
+      { label: 'Avg Speed', value: this.fmtSpeed(11.2 + prof * 4.1), delta: '↓ 1.3', deltaColor: '#ff4d5e', tint: '#a06bff', tintBg: 'rgba(160,107,255,.14)' }
+    ];
+
+    const layerDefs = [
+      ['traj', 'Vessel Trajectories'], ['heat', 'Density Heatmap'], ['zones', 'High Risk Zones'],
+      ['ports', 'Ports & Terminals'], ['routes', 'Navigation Routes'], ['labels', 'Base Map Labels']
+    ];
+
+    const pv = s.popup ? s.popup.v : null;
+    const tv = s.three;
+
+    return {
+      mapRef: this.mapRef, threeRef: this.threeRef,
+      kpis,
+      dateLabel: this.fmtDate(s.dateEnd),
+      clock: s.clock,
+      hour: s.hour, hourLabel: this.hourLabel(s.hour),
+      onHour: e => this.setHour(+e.target.value),
+      playing: s.playing, notPlaying: !s.playing,
+      togglePlay: () => {
+        if (s.playing) { clearInterval(this.playTimer); this.setState({ playing: false }); }
+        else {
+          this.setState({ playing: true });
+          this.playTimer = setInterval(() => this.setHour((this.state.hour + 0.25) % 24), 700 / this.state.speed);
+        }
+      },
+      stepHour: () => this.setHour((s.hour + 1) % 24),
+      speed: String(s.speed),
+      onSpeed: e => {
+        const sp = +e.target.value;
+        this.setState({ speed: sp }, () => {
+          if (this.state.playing) { clearInterval(this.playTimer); this.playTimer = setInterval(() => this.setHour((this.state.hour + 0.25) % 24), 700 / sp); }
+        });
+      },
+      dateStart: s.dateStart, dateEnd: s.dateEnd,
+      onDateStart: e => this.setState({ dateStart: e.target.value }, () => this.updateHeat()),
+      onDateEnd: e => this.setState({ dateEnd: e.target.value }, () => this.updateHeat()),
+      vesselType: s.vesselType,
+      onVesselType: e => this.setState({ vesselType: e.target.value }, () => this.refreshVessels()),
+      density: s.density,
+      onDensity: e => this.setState({ density: +e.target.value }, () => this.updateHeat()),
+      search: s.search,
+      onSearch: e => this.setState({ search: e.target.value }, () => this.refreshVessels()),
+      ...this.searchVals(),
+      resetFilters: () => this.setState({ vesselType: 'all', density: 75, search: '', hour: 15, dateStart: '2026-06-18', dateEnd: '2026-06-25' }, () => { this.updateHeat(); this.refreshVessels(); }),
+      layerList: layerDefs.map(([k, label]) => ({ label, on: s.layers[k], gradient: k === 'heat' && s.layers.heat, toggle: () => this.toggleLayer(k) })),
+
+      zoomIn: () => this.map && this.map.zoomIn(),
+      zoomOut: () => this.map && this.map.zoomOut(),
+      resetView: () => this.map && this.map.flyTo([1.16, 103.86], 10, { duration: 1.1 }),
+
+      zones: this.ZONES.map(z => ({
+        id: z.id, name: z.name, countFmt: fmt(z.count), score: z.score,
+        color: this.scoreColor(z.score), pct: z.score + '%',
+        open: () => this.openZone(z.id)
+      })),
+
+      drawerOpen: !!s.drawer,
+      drawerList: s.drawer === 'list',
+      drawerDetail: !!zone,
+      drawerTitle: zone ? 'ZONE DETAIL' : 'HIGH RISK ZONES',
+      openDrawerList: () => this.setState({ drawer: 'list', sidebarOpen: false }),
+      closeDrawer: () => this.setState({ drawer: null }),
+      zoneName: zone && zone.name, zoneId: zone && zone.id,
+      zoneScore: zone && zone.score, zoneColor: zone && this.scoreColor(zone.score),
+      zoneBand: zone && this.scoreBand(zone.score) + ' RISK',
+      zoneRing: zone && 'conic-gradient(' + this.scoreColor(zone.score) + ' ' + zone.score * 3.6 + 'deg, #1c2c4a 0deg)',
+      zoneCount: zone && fmt(zone.count), zoneIncidents: zone && zone.incidents, zoneWidth: zone && zone.width,
+      zoneFactors: zone ? this.zoneFactors(zone) : [],
+      zoomToZone: () => {
+        if (zone && this.map) {
+          this.map.flyTo(zone.center, 11.4, { duration: 1.3 });
+          this.showToast('Flying to ' + zone.id + ' — ' + zone.name);
+          if (window.innerWidth < 960) this.setState({ drawer: null });
+        }
+      },
+
+      popupOpen: !!s.popup,
+      popupX: s.popup ? s.popup.x + 'px' : '0px',
+      popupY: s.popup ? (s.popup.y - 14) + 'px' : '0px',
+      pv: pv ? {
+        mmsi: pv.mmsi, name: pv.name, type: pv.type,
+        speed: this.fmtSpeed(pv.speedKn), course: pv.heading + '°',
+        ts: this.fmtDate(s.dateEnd) + ' ' + this.hourLabel(s.hour) + ':00 UTC'
+      } : {},
+      closePopup: () => this.setState({ popup: null }, () => this.refreshVessels()),
+      open3D: () => this.open3DPanel(),
+      trackVessel: () => this.showToast('Tracking ' + (pv ? pv.name : '') + ' — route history loaded'),
+
+      threeOpen: !!tv,
+      threeName: tv && tv.name,
+      threeLoa: tv && tv.loa + ' m', threeBeam: tv && tv.beam + ' m', threeDraft: tv && tv.draft + ' m',
+      close3D: () => { this.teardownThree(); this.setState({ three: null }); },
+
+      settingsOpen: s.settingsOpen,
+      openSettings: () => this.setState({ settingsOpen: true }),
+      closeSettings: () => this.setState({ settingsOpen: false }),
+      stop: e => e.stopPropagation(),
+      tz: s.tz,
+      onTz: e => this.setState({ tz: e.target.value }, () => this.tickClock()),
+      unitOpts: [['kn', 'Knots'], ['kmh', 'km/h'], ['mph', 'mph']].map(([val, label]) => ({
+        label, pick: () => this.setState({ units: val }),
+        bg: s.units === val ? '#2f8bff' : 'transparent', fg: s.units === val ? '#fff' : '#8296b8'
+      })),
+      exportOpts: [['csv', 'CSV', '.csv'], ['geojson', 'GeoJSON', '.geojson'], ['pdf', 'PDF Report', '.pdf']].map(([k, label, ext]) => ({
+        label, ext, on: s.exports[k], toggle: () => this.setState({ exports: { ...s.exports, [k]: !s.exports[k] } })
+      })),
+
+      sidebarOpen: String(s.sidebarOpen),
+      scrimOpen: s.sidebarOpen === true,
+      sidebarHidden: s.sidebarHidden,
+      asideRef: this.asideRef,
+      toggleSidebar: () => {
+        if (window.innerWidth <= 960) {
+          // WAAPI slide — survives runtime re-renders (CSS animations get restarted)
+          const el = this.asideRef.current;
+          const kf = [{ transform: 'translateX(-105%)' }, { transform: 'translateX(0)' }];
+          const opts = { duration: 250, easing: 'ease' };
+          if (s.sidebarOpen === true) {
+            if (el && el.animate) {
+              const a = el.animate(kf.slice().reverse(), { ...opts, fill: 'forwards' });
+              a.onfinish = () => { this.setState({ sidebarOpen: false }, () => a.cancel()); };
+            } else this.setState({ sidebarOpen: false });
+          } else {
+            this.setState({ sidebarOpen: true }, () => {
+              const n = this.asideRef.current;
+              if (n && n.animate) n.animate(kf, opts);
+            });
+          }
+        }
+        else this.setState({ sidebarHidden: !s.sidebarHidden }, () => setTimeout(() => this.map && this.map.invalidateSize(), 60));
+      },
+      basemap: s.basemap,
+      onBasemap: e => this.setState({ basemap: e.target.value }, () => this.applyBasemap()),
+      coordRef: this.coordRef,
+      toast: s.toast
+    };
+  }
+}
+</script>
+</body>
+</html>

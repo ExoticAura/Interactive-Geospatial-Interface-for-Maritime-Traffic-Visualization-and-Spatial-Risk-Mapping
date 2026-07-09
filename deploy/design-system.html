@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;padding:0;background:#060a14;color:#e8f0ff;font-family:'IBM Plex Sans',sans-serif}
+*{box-sizing:border-box}
+a{color:#35c4f0;text-decoration:none}
+a:hover{color:#8fdcf7}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes pulse{0%,100%{opacity:.45}50%{opacity:1}}
+</style>
+</helmet>
+<div style="min-height:100vh;background:#060a14;padding:40px clamp(20px,6vw,80px) 80px;max-width:1200px;margin:0 auto" data-screen-label="Design System">
+
+  <a href="index.html" style="font-size:12px;font-weight:600">← Back to dashboard</a>
+  <h1 style="font-size:30px;font-weight:700;margin:14px 0 4px">Maritime Risk Atlas — Design System</h1>
+  <p style="color:#8296b8;font-size:14px;margin:0 0 42px">Tokens, components, and motion for the risk analytics dashboard.</p>
+
+  <!-- COLORS -->
+  <h2 style="font-size:12px;font-weight:700;letter-spacing:1.4px;color:#2f8bff;margin:0 0 16px">01 · COLOR</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:20px">
+    <sc-for list="{{ colors }}" as="c" hint-placeholder-count="12">
+      <div style="border:1px solid #16233c;border-radius:10px;overflow:hidden;background:#0a1120">
+        <div style="height:58px;background:{{ c.hex }}"></div>
+        <div style="padding:8px 11px">
+          <div style="font-size:11.5px;font-weight:600">{{ c.name }}</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8296b8">{{ c.hex }}</div>
+          <div style="font-size:10px;color:#5a6b8c;margin-top:2px">{{ c.use }}</div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+  <div style="border:1px solid #16233c;border-radius:10px;padding:14px 16px;background:#0a1120;margin-bottom:48px">
+    <div style="font-size:11px;font-weight:600;color:#8296b8;margin-bottom:8px">Density heatmap gradient</div>
+    <div style="height:14px;border-radius:7px;background:linear-gradient(90deg,#1c2fd4,#00b7e8,#3fe05f,#ffe14d,#ff8a2e,#ff3b2e)"></div>
+    <div style="display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5a6b8c;margin-top:5px"><span>0.15</span><span>0.35</span><span>0.55</span><span>0.72</span><span>0.88</span><span>1.00</span></div>
+  </div>
+
+  <!-- TYPE -->
+  <h2 style="font-size:12px;font-weight:700;letter-spacing:1.4px;color:#2f8bff;margin:0 0 16px">02 · TYPOGRAPHY</h2>
+  <div style="border:1px solid #16233c;border-radius:10px;background:#0a1120;padding:20px 22px;margin-bottom:48px;display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:18px"><span style="font-size:22px;font-weight:700">IBM Plex Sans</span><span style="font-size:11px;color:#5a6b8c;font-family:'IBM Plex Mono',monospace">UI · labels · headings · 400/500/600/700</span></div>
+    <div style="display:flex;align-items:baseline;gap:18px"><span style="font-size:22px;font-family:'IBM Plex Mono',monospace">IBM Plex Mono</span><span style="font-size:11px;color:#5a6b8c;font-family:'IBM Plex Mono',monospace">data · KPI values · coordinates · timestamps</span></div>
+    <div style="height:1px;background:#16233c"></div>
+    <sc-for list="{{ type }}" as="t" hint-placeholder-count="5">
+      <div style="display:grid;grid-template-columns:170px 1fr;gap:16px;align-items:baseline">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#5a6b8c">{{ t.token }}</span>
+        <span style="font-size:{{ t.size }};font-weight:{{ t.weight }};letter-spacing:{{ t.ls }}">{{ t.sample }}</span>
+      </div>
+    </sc-for>
+  </div>
+
+  <!-- SPACING -->
+  <h2 style="font-size:12px;font-weight:700;letter-spacing:1.4px;color:#2f8bff;margin:0 0 16px">03 · SPACING &amp; RADII</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:48px">
+    <div style="border:1px solid #16233c;border-radius:10px;background:#0a1120;padding:18px 20px">
+      <div style="font-size:11px;font-weight:600;color:#8296b8;margin-bottom:12px">Spacing scale — base 4px</div>
+      <div style="display:flex;align-items:flex-end;gap:10px">
+        <sc-for list="{{ spacing }}" as="sp" hint-placeholder-count="7">
+          <div style="text-align:center">
+            <div style="width:26px;background:#2f8bff;border-radius:3px;height:{{ sp.px }}"></div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#5a6b8c;margin-top:5px">{{ sp.label }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="font-size:10.5px;color:#5a6b8c;margin-top:12px">4 · 6 · 8 · 10 · 12 · 16 · 24 — panel padding 14–16, card gap 10</div>
+    </div>
+    <div style="border:1px solid #16233c;border-radius:10px;background:#0a1120;padding:18px 20px">
+      <div style="font-size:11px;font-weight:600;color:#8296b8;margin-bottom:12px">Corner radii</div>
+      <div style="display:flex;gap:14px;align-items:flex-end">
+        <div style="text-align:center"><div style="width:54px;height:54px;background:#101c33;border:1px solid #24427a;border-radius:6px"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#5a6b8c;margin-top:5px">6 chip</div></div>
+        <div style="text-align:center"><div style="width:54px;height:54px;background:#101c33;border:1px solid #24427a;border-radius:8px"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#5a6b8c;margin-top:5px">8 control</div></div>
+        <div style="text-align:center"><div style="width:54px;height:54px;background:#101c33;border:1px solid #24427a;border-radius:10px"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#5a6b8c;margin-top:5px">10 card</div></div>
+        <div style="text-align:center"><div style="width:54px;height:54px;background:#101c33;border:1px solid #24427a;border-radius:14px"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#5a6b8c;margin-top:5px">14 modal</div></div>
+        <div style="text-align:center"><div style="width:54px;height:54px;background:#101c33;border:1px solid #24427a;border-radius:50%"></div><div style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#5a6b8c;margin-top:5px">50% pip</div></div>
+      </div>
+      <div style="font-size:10.5px;color:#5a6b8c;margin-top:12px">Shadow: 0 18–30px 50–90px rgba(0,0,0,.5–.7) on floating surfaces</div>
+    </div>
+  </div>
+
+  <!-- COMPONENTS -->
+  <h2 style="font-size:12px;font-weight:700;letter-spacing:1.4px;color:#2f8bff;margin:0 0 16px">04 · COMPONENTS</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-bottom:48px">
+    <div style="border:1px solid #16233c;border-radius:10px;background:#0a1120;padding:18px 20px">
+      <div style="font-size:11px;font-weight:600;color:#8296b8;margin-bottom:14px">Buttons — default / hover / disabled</div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+        <button style="background:#2f8bff;border:none;color:#fff;border-radius:8px;padding:10px 18px;font-size:12px;font-weight:700;letter-spacing:.7px;cursor:pointer;font-family:inherit" style-hover="background:#4a9dff">PRIMARY</button>
+        <button style="background:#182741;border:1px solid #24427a;color:#cfe0ff;border-radius:8px;padding:10px 18px;font-size:12px;font-weight:700;letter-spacing:.7px;cursor:pointer;font-family:inherit" style-hover="background:#1e3152">SECONDARY</button>
+        <button disabled="{{ true }}" style="background:#0c1526;border:1px solid #16233c;color:#3d4c68;border-radius:8px;padding:10px 18px;font-size:12px;font-weight:700;letter-spacing:.7px;cursor:not-allowed;font-family:inherit">DISABLED</button>
+      </div>
+      <div style="font-size:10.5px;color:#5a6b8c;margin-top:12px">Hover lightens fill one step (#2f8bff → #4a9dff). Labels uppercase, 700, +0.7px tracking.</div>
+    </div>
+    <div style="border:1px solid #16233c;border-radius:10px;background:#0a1120;padding:18px 20px">
+      <div style="font-size:11px;font-weight:600;color:#8296b8;margin-bottom:14px">Risk levels</div>
+      <div style="display:flex;flex-direction:column;gap:9px">
+        <div style="display:flex;align-items:center;gap:10px"><div style="width:9px;height:9px;border-radius:50%;background:#ff4d5e"></div><span style="font-size:12px;width:110px">Severe · 85–100</span><div style="flex:1;height:6px;border-radius:3px;background:#121e34;overflow:hidden"><div style="width:92%;height:100%;background:#ff4d5e"></div></div></div>
+        <div style="display:flex;align-items:center;gap:10px"><div style="width:9px;height:9px;border-radius:50%;background:#ff9f2e"></div><span style="font-size:12px;width:110px">High · 70–84</span><div style="flex:1;height:6px;border-radius:3px;background:#121e34;overflow:hidden"><div style="width:76%;height:100%;background:#ff9f2e"></div></div></div>
+        <div style="display:flex;align-items:center;gap:10px"><div style="width:9px;height:9px;border-radius:50%;background:#ffd23e"></div><span style="font-size:12px;width:110px">Elevated · 50–69</span><div style="flex:1;height:6px;border-radius:3px;background:#121e34;overflow:hidden"><div style="width:58%;height:100%;background:#ffd23e"></div></div></div>
+      </div>
+      <div style="font-size:10.5px;color:#5a6b8c;margin-top:12px">Zone polygons: 2px dashed stroke (7 6), fill at 13% opacity, 24% on hover.</div>
+    </div>
+    <div style="border:1px solid #16233c;border-radius:10px;background:#0a1120;padding:18px 20px">
+      <div style="font-size:11px;font-weight:600;color:#8296b8;margin-bottom:14px">KPI card</div>
+      <div style="display:flex;align-items:center;gap:10px;background:#0b1425;border:1px solid #16233c;border-radius:10px;padding:8px 12px;max-width:230px">
+        <div style="width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:rgba(47,139,255,.14)"><div style="width:11px;height:11px;transform:rotate(45deg);border-radius:2px;background:#2f8bff"></div></div>
+        <div style="line-height:1.2">
+          <div style="font-size:10.5px;color:#8296b8">Total Vessels</div>
+          <div style="display:flex;align-items:baseline;gap:7px"><span style="font-size:17px;font-weight:700;font-family:'IBM Plex Mono',monospace">12,487</span><span style="font-size:10.5px;font-weight:600;color:#35e07c">↑ 8.4%</span></div>
+          <div style="font-size:9.5px;color:#5a6b8c">vs last 7 days</div>
+        </div>
+      </div>
+      <div style="font-size:10.5px;color:#5a6b8c;margin-top:12px">Icon tint at 13–14% alpha of its accent. Value in Plex Mono 700.</div>
+    </div>
+    <div style="border:1px solid #16233c;border-radius:10px;background:#0a1120;padding:18px 20px">
+      <div style="font-size:11px;font-weight:600;color:#8296b8;margin-bottom:14px">Vessel markers</div>
+      <div style="display:flex;gap:26px;align-items:center">
+        <div style="text-align:center"><div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:15px solid #35e07c;margin:0 auto;transform:rotate(35deg)"></div><div style="font-size:10px;color:#5a6b8c;margin-top:8px">Moving</div></div>
+        <div style="text-align:center"><div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:15px solid #ff4d5e;margin:0 auto"></div><div style="font-size:10px;color:#5a6b8c;margin-top:8px">Anchored</div></div>
+        <div style="text-align:center"><div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:15px solid #35e07c;margin:0 auto;opacity:.15"></div><div style="font-size:10px;color:#5a6b8c;margin-top:8px">Filtered out (15%)</div></div>
+        <div style="text-align:center"><div style="width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:20px solid #fff;margin:0 auto"></div><div style="font-size:10px;color:#5a6b8c;margin-top:8px">Selected</div></div>
+      </div>
+      <div style="font-size:10.5px;color:#5a6b8c;margin-top:12px">Triangle rotated to heading; drop-shadow 0 0 4px black at 80%.</div>
+    </div>
+  </div>
+
+  <!-- MOTION -->
+  <h2 style="font-size:12px;font-weight:700;letter-spacing:1.4px;color:#2f8bff;margin:0 0 16px">05 · MOTION</h2>
+  <div style="border:1px solid #16233c;border-radius:10px;background:#0a1120;overflow:hidden;margin-bottom:24px">
+    <div style="display:grid;grid-template-columns:1.3fr 1fr 1fr 1.6fr;gap:0;padding:10px 18px;font-size:10px;color:#5a6b8c;letter-spacing:.8px;border-bottom:1px solid #16233c"><span>ELEMENT</span><span>DURATION</span><span>EASING</span><span>BEHAVIOR</span></div>
+    <sc-for list="{{ motion }}" as="m" hint-placeholder-count="7">
+      <div style="display:grid;grid-template-columns:1.3fr 1fr 1fr 1.6fr;padding:10px 18px;font-size:12px;border-bottom:1px solid #101a2e;align-items:center">
+        <span style="font-weight:600">{{ m.el }}</span>
+        <span style="font-family:'IBM Plex Mono',monospace;color:#35c4f0">{{ m.dur }}</span>
+        <span style="font-family:'IBM Plex Mono',monospace;color:#8296b8">{{ m.ease }}</span>
+        <span style="color:#8296b8;font-size:11.5px">{{ m.desc }}</span>
+      </div>
+    </sc-for>
+  </div>
+  <div style="font-size:11px;color:#5a6b8c">Live spec — every swatch, control, and timing above is the same inline value used by the dashboard. <a href="index.html">Open the dashboard →</a></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      colors: [
+        { name: 'Abyss', hex: '#060a14', use: 'App background' },
+        { name: 'Panel Deep', hex: '#080e1c', use: 'Top bar, rail, timeline' },
+        { name: 'Surface', hex: '#0a1120', use: 'Sidebar, drawer, modal' },
+        { name: 'Surface Raised', hex: '#0c1526', use: 'Inputs, sub-cards' },
+        { name: 'Border', hex: '#16233c', use: 'Panel dividers' },
+        { name: 'Border Strong', hex: '#24427a', use: 'Floating surfaces, focus' },
+        { name: 'Text', hex: '#e8f0ff', use: 'Primary text' },
+        { name: 'Text Muted', hex: '#8296b8', use: 'Labels, secondary' },
+        { name: 'Accent Blue', hex: '#2f8bff', use: 'Primary actions, brand' },
+        { name: 'Cyan', hex: '#35c4f0', use: 'Links, lane traces' },
+        { name: 'Signal Green', hex: '#35e07c', use: 'Moving vessels, positive Δ' },
+        { name: 'Risk Red', hex: '#ff4d5e', use: 'Severe zones, anchored' },
+        { name: 'Risk Orange', hex: '#ff9f2e', use: 'High zones' },
+        { name: 'Risk Yellow', hex: '#ffd23e', use: 'Elevated zones' },
+        { name: 'Violet', hex: '#a06bff', use: 'Speed KPI tint' }
+      ],
+      type: [
+        { token: 'display / 30 / 700', size: '30px', weight: '700', ls: '0', sample: 'Maritime Risk Atlas' },
+        { token: 'kpi-value / 17 / 700 mono', size: '17px', weight: '700', ls: '0', sample: '12,487 vessels' },
+        { token: 'section / 11 / 700 / +1.2', size: '11px', weight: '700', ls: '1.2px', sample: 'HIGH RISK ZONES' },
+        { token: 'body / 12.5 / 400', size: '12.5px', weight: '400', ls: '0', sample: 'Vessel trajectories across the Singapore Strait' },
+        { token: 'caption / 10 / 400', size: '10px', weight: '400', ls: '0', sample: 'vs last 7 days · 25 Jun 2026 14:35 UTC' }
+      ],
+      spacing: [
+        { label: '4', px: '4px' }, { label: '6', px: '6px' }, { label: '8', px: '8px' },
+        { label: '10', px: '10px' }, { label: '12', px: '12px' }, { label: '16', px: '16px' }, { label: '24', px: '24px' }
+      ],
+      motion: [
+        { el: 'Risk drawer', dur: '220ms', ease: 'ease', desc: 'Slide in from right +30px, fade' },
+        { el: 'Vessel popup', dur: '180ms', ease: 'ease', desc: 'Pop: scale .96 → 1, fade, anchored above marker' },
+        { el: 'Settings modal', dur: '200ms', ease: 'ease', desc: 'Fade up 10px; scrim blur 3px' },
+        { el: '3D panel', dur: '220ms', ease: 'ease', desc: 'Fade up 10px from bottom-right' },
+        { el: 'Map flyTo', dur: '1100–1300ms', ease: 'leaflet cubic', desc: 'Zoom-to-zone and reset view' },
+        { el: 'Factor bars', dur: '400ms', ease: 'ease', desc: 'Width transition on zone change' },
+        { el: 'Mobile sidebar', dur: '250ms', ease: 'ease', desc: 'translateX(-105%) → 0 with scrim' },
+        { el: 'Timeline playback', dur: '700ms / tick', ease: 'linear', desc: '+15 min per tick; ÷ speed (1x/2x/4x)' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
