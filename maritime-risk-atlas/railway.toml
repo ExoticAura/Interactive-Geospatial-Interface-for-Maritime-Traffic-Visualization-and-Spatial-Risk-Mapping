@@ -2,6 +2,6 @@
 builder = "DOCKERFILE"
 
 [deploy]
-startCommand = "gunicorn app.app:server --bind 0.0.0.0:$PORT --workers 2 --preload"
+startCommand = "/bin/sh -c 'exec gunicorn app.app:server --bind 0.0.0.0:$PORT --workers 2 --preload'"
 healthcheckPath = "/"
 restartPolicyType = "ON_FAILURE"
